@@ -1,4 +1,4 @@
-﻿from flask import Flask
+from flask import Flask, jsonify
 from extensions import db
 from flask_cors import CORS
 from config import Config
@@ -14,6 +14,12 @@ def create_app():
 
     app.register_blueprint(disciplines_bp, url_prefix="/api/disciplines")
     app.register_blueprint(users_bp, url_prefix="/api/users")
+
+    @app.route("/api/migrate", methods=["POST"])
+    def migrate():
+        db.drop_all()
+        db.create_all()
+        return jsonify({"message": "migrated"})
 
     with app.app_context():
         db.create_all()

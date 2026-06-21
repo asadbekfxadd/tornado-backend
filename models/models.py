@@ -19,7 +19,6 @@ class User(db.Model):
             "email": self.email,
             "language": self.language,
             "is_subscribed": self.is_subscribed,
-            "subscription_until": self.subscription_until.isoformat() if self.subscription_until else None
         }
 
 class Discipline(db.Model):
@@ -28,18 +27,22 @@ class Discipline(db.Model):
     slug = db.Column(db.String(50), unique=True, nullable=False)
     name_ru = db.Column(db.String(100), nullable=False)
     name_uz = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100), nullable=False)
     description_ru = db.Column(db.Text)
     description_uz = db.Column(db.Text)
+    description_en = db.Column(db.Text)
     icon = db.Column(db.String(10), default="🥊")
     order = db.Column(db.Integer, default=0)
     lessons = db.relationship("Lesson", backref="discipline", lazy=True)
 
     def to_dict(self, lang="ru"):
+        name = self.name_ru if lang == "ru" else (self.name_uz if lang == "uz" else self.name_en)
+        desc = self.description_ru if lang == "ru" else (self.description_uz if lang == "uz" else self.description_en)
         return {
             "id": self.id,
             "slug": self.slug,
-            "name": self.name_ru if lang == "ru" else self.name_uz,
-            "description": self.description_ru if lang == "ru" else self.description_uz,
+            "name": name,
+            "description": desc,
             "icon": self.icon,
             "lesson_count": len(self.lessons)
         }
@@ -50,8 +53,10 @@ class Lesson(db.Model):
     discipline_id = db.Column(db.Integer, db.ForeignKey("disciplines.id"), nullable=False)
     title_ru = db.Column(db.String(200), nullable=False)
     title_uz = db.Column(db.String(200), nullable=False)
+    title_en = db.Column(db.String(200), nullable=False)
     description_ru = db.Column(db.Text)
     description_uz = db.Column(db.Text)
+    description_en = db.Column(db.Text)
     video_url = db.Column(db.String(500))
     thumbnail_url = db.Column(db.String(500))
     duration_seconds = db.Column(db.Integer, default=0)
@@ -61,11 +66,13 @@ class Lesson(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self, lang="ru"):
+        title = self.title_ru if lang == "ru" else (self.title_uz if lang == "uz" else self.title_en)
+        desc = self.description_ru if lang == "ru" else (self.description_uz if lang == "uz" else self.description_en)
         return {
             "id": self.id,
             "discipline_id": self.discipline_id,
-            "title": self.title_ru if lang == "ru" else self.title_uz,
-            "description": self.description_ru if lang == "ru" else self.description_uz,
+            "title": title,
+            "description": desc,
             "video_url": self.video_url,
             "thumbnail_url": self.thumbnail_url,
             "duration_seconds": self.duration_seconds,
@@ -82,10 +89,3 @@ class UserProgress(db.Model):
     completed = db.Column(db.Boolean, default=False)
     watched_seconds = db.Column(db.Integer, default=0)
     completed_at = db.Column(db.DateTime, nullable=True)
-
-    def to_dict(self):
-        return {
-            "lesson_id": self.lesson_id,
-            "completed": self.completed,
-            "watched_seconds": self.watched_seconds
-        }
